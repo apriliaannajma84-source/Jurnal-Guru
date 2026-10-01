@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Manajemen Pembelajaran Guru</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #2ecc71;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        header h1 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .filter-section {
+            background: var(--card-bg);
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select, input, textarea, button {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        button {
+            cursor: pointer;
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-print {
+            background-color: var(--accent);
+            font-weight: bold;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #e0e0e0;
+            color: var(--text);
+            border: none;
+            font-weight: bold;
+            border-radius: 6px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary);
+        }
+
+        input, textarea, select {
+            width: 100%;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 70px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        /* Tampilan khusus saat dicetak (Print CSS) */
+        @media print {
+            body {
+                background: white;
+                color: black;
+                padding: 0;
+            }
+
+            .no-print, form, .tabs, .filter-section button, .btn-delete {
+                display: none !important;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            .tab-content {
+                display: block !important;
+                box-shadow: none;
+                padding: 0;
+                margin-bottom: 30px;
+            }
+
+            header {
+                border-bottom: 2px solid black;
+            }
+
+            table {
+                border: 1px solid black;
+            }
+
+            th, td {
+                border: 1px solid black;
+            }
+
+            th {
+                background-color: #f0f0f0 !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Sistem Manajemen Pembelajaran Guru</h1>
+        <p>Rencana Pembelajaran, Jurnal Mengajar, dan Penugasan Siswa</p>
+    </header>
+
+    <!-- Filter Bulan dan Tombol Cetak -->
+    <div class="filter-section">
+        <div class="filter-group">
+            <label for="filterBulan" style="margin:0;">Pilih Bulan:</label>
+            <input type="month" id="filterBulan" onchange="renderAll()">
+        </div>
+        <button class="btn-print no-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+    </div>
+
+    <!-- Navigasi Tab -->
+    <div class="tabs no-print">
+        <button class="tab-btn active" onclick="switchTab('rpp')">1. Rencana Pembelajaran (RPP)</button>
+        <button class="tab-btn" onclick="switchTab('jurnal')">2. Jurnal Guru</button>
+        <button class="tab-btn" onclick="switchTab('tugas')">3. Tugas Siswa</button>
+    </div>
+
+    <!-- TAB 1: RENCANA PEMBELAJARAN -->
+    <div id="rpp" class="tab-content active">
+        <h2 style="margin-bottom: 15px;">Rencana Pelaksanaan Pembelajaran (RPP)</h2>
+        <form id="formRpp" class="no-print" onsubmit="addData('rpp', event)">
+            <div>
+                <label>Tanggal</label>
+                <input type="date" id="rppTanggal" required>
+            </div>
+            <div>
+                <label>Kelas / Mata Pelajaran</label>
+                <input type="text" id="rppKelasMapel" placeholder="Contoh: VII-A / PAI" required>
+            </div>
+            <div class="full-width">
+                <label>Materi / Topik Utama</label>
+                <input type="text" id="rppMateri" required>
+            </div>
+            <div class="full-width">
+                <label>Tujuan Pembelajaran</label>
+                <textarea id="rppTujuan" required></textarea>
+            </div>
+            <div class="full-width">
+                <label>Langkah-Langkah Kegiatan</label>
+                <textarea id="rppLangkah" required></textarea>
+            </div>
+            <div class="full-width">
+                <button type="submit" style="width: 100%;">Simpan Rencana Pembelajaran</button>
+            </div>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Kelas/Mapel</th>
+                    <th>Materi</th>
+                    <th>Tujuan Pembelajaran</th>
+                    <th>Langkah Kegiatan</th>
+                    <th class="no-print">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableRpp"></tbody>
+        </table>
+    </div>
+
+    <!-- TAB 2: JURNAL GURU -->
+    <div id="jurnal" class="tab-content">
+        <h2 style="margin-bottom: 15px;">Jurnal Harian Guru</h2>
+        <form id="formJurnal" class="no-print" onsubmit="addData('jurnal', event)">
+            <div>
+                <label>Tanggal</label>
+                <input type="date" id="jurnalTanggal" required>
+            </div>
+            <div>
+                <label>Jam Ke- & Kelas</label>
+                <input type="text" id="jurnalJamKelas" placeholder="Contoh: Jam 1-2 (Kelas VIII-B)" required>
+            </div>
+            <div class="full-width">
+                <label>Materi yang Diterangkan</label>
+                <input type="text" id="jurnalMateri" required>
+            </div>
+            <div>
+                <label>Jumlah Siswa Hadir / Absen</label>
+                <input type="text" id="jurnalAbsensi" placeholder="Contoh: Hadir 28, Sakit 2" required>
+            </div>
+            <div>
+                <label>Catatan / Kendala / Catatan Perilaku</label>
+                <input type="text" id="jurnalCatatan">
+            </div>
+            <div class="full-width">
+                <button type="submit" style="width: 100%;">Simpan Jurnal Harian</button>
+            </div>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tanggal</th>
+                    <th>Jam & Kelas</th>
+                    <th>Materi Terlaksana</th>
+                    <th>Kehadiran Siswa</th>
+                    <th>Catatan/Kendala</th>
+                    <th class="no-print">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableJurnal"></tbody>
+        </table>
+    </div>
+
+    <!-- TAB 3: TUGAS SISWA -->
+    <div id="tugas" class="tab-content">
+        <h2 style="margin-bottom: 15px;">Daftar Tugas & Penilaian Siswa</h2>
+        <form id="formTugas" class="no-print" onsubmit="addData('tugas', event)">
+            <div>
+                <label>Tanggal Pemberian</label>
+                <input type="date" id="tugasTanggal" required>
+            </div>
+            <div>
+                <label>Batas Pengumpulan (Deadline)</label>
+                <input type="date" id="tugasDeadline" required>
+            </div>
+            <div>
+                <label>Kelas / Mata Pelajaran</label>
+                <input type="text" id="tugasKelasMapel" placeholder="Contoh: IX-A / PAI" required>
+            </div>
+            <div>
+                <label>Nama/Deskripsi Tugas</label>
+                <input type="text" id="tugasDeskripsi" required>
+            </div>
+            <div class="full-width">
+                <button type="submit" style="width: 100%;">Simpan Tugas</button>
+            </div>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Tgl Diberikan</th>
+                    <th>Deadline</th>
+                    <th>Kelas/Mapel</th>
+                    <th>Deskripsi Tugas</th>
+                    <th class="no-print">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableTugas"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Inisialisasi Data dari LocalStorage atau Array Kosong
+    let store = {
+        rpp: JSON.parse(localStorage.getItem('app_rpp')) || [],
+        jurnal: JSON.parse(localStorage.getItem('app_jurnal')) || [],
+        tugas: JSON.parse(localStorage.getItem('app_tugas')) || []
+    };
+
+    // Set default filter ke bulan berjalan
+    document.addEventListener("DOMContentLoaded", () => {
+        const today = new Date();
+        const yearMonth = today.toISOString().slice(0, 7);
+        document.getElementById('filterBulan').value = yearMonth;
+        renderAll();
+    });
+
+    // Pindah Tab
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        event.target.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+    }
+
+    // Tambah Data
+    function addData(type, e) {
+        e.preventDefault();
+        
+        let newItem = { id: Date.now() };
+
+        if (type === 'rpp') {
+            newItem.tanggal = document.getElementById('rppTanggal').value;
+            newItem.kelasMapel = document.getElementById('rppKelasMapel').value;
+            newItem.materi = document.getElementById('rppMateri').value;
+            newItem.tujuan = document.getElementById('rppTujuan').value;
+            newItem.langkah = document.getElementById('rppLangkah').value;
+            document.getElementById('formRpp').reset();
+        } else if (type === 'jurnal') {
+            newItem.tanggal = document.getElementById('jurnalTanggal').value;
+            newItem.jamKelas = document.getElementById('jurnalJamKelas').value;
+            newItem.materi = document.getElementById('jurnalMateri').value;
+            newItem.absensi = document.getElementById('jurnalAbsensi').value;
+            newItem.catatan = document.getElementById('jurnalCatatan').value;
+            document.getElementById('formJurnal').reset();
+        } else if (type === 'tugas') {
+            newItem.tanggal = document.getElementById('tugasTanggal').value;
+            newItem.deadline = document.getElementById('tugasDeadline').value;
+            newItem.kelasMapel = document.getElementById('tugasKelasMapel').value;
+            newItem.deskripsi = document.getElementById('tugasDeskripsi').value;
+            document.getElementById('formTugas').reset();
+        }
+
+        store[type].push(newItem);
+        saveData(type);
+        renderAll();
+    }
+
+    // Hapus Data
+    function deleteData(type, id) {
+        if (confirm("Apakah Anda yakin ingin menghapus data ini?")) {
+            store[type] = store[type].filter(item => item.id !== id);
+            saveData(type);
+            renderAll();
+        }
+    }
+
+    // Simpan ke LocalStorage
+    function saveData(type) {
+        localStorage.setItem(`app_${type}`, JSON.stringify(store[type]));
+    }
+
+    // Render Tabel berdasarkan Filter Bulan
+    function renderAll() {
+        const selectedMonth = document.getElementById('filterBulan').value; // Format: YYYY-MM
+
+        // Filter RPP
+        const tbodyRpp = document.getElementById('tableRpp');
+        tbodyRpp.innerHTML = '';
+        store.rpp
+            .filter(item => item.tanggal.startsWith(selectedMonth))
+            .sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal))
+            .forEach(item => {
+                tbodyRpp.innerHTML += `
+                    <tr>
+                        <td>${formatTanggal(item.tanggal)}</td>
+                        <td>${escapeHtml(item.kelasMapel)}</td>
+                        <td>${escapeHtml(item.materi)}</td>
+                        <td>${escapeHtml(item.tujuan)}</td>
+                        <td>${escapeHtml(item.langkah)}</td>
+                        <td class="no-print">
+                            <button class="btn-delete" onclick="deleteData('rpp', ${item.id})">Hapus</button>
+                        </td>
+                    </tr>`;
+            });
+
+        // Filter Jurnal
+        const tbodyJurnal = document.getElementById('tableJurnal');
+        tbodyJurnal.innerHTML = '';
+        store.jurnal
+            .filter(item => item.tanggal.startsWith(selectedMonth))
+            .sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal))
+            .forEach(item => {
+                tbodyJurnal.innerHTML += `
+                    <tr>
+                        <td>${formatTanggal(item.tanggal)}</td>
+                        <td>${escapeHtml(item.jamKelas)}</td>
+                        <td>${escapeHtml(item.materi)}</td>
+                        <td>${escapeHtml(item.absensi)}</td>
+                        <td>${escapeHtml(item.catatan || '-')}</td>
+                        <td class="no-print">
+                            <button class="btn-delete" onclick="deleteData('jurnal', ${item.id})">Hapus</button>
+                        </td>
+                    </tr>`;
+            });
+
+        // Filter Tugas
+        const tbodyTugas = document.getElementById('tableTugas');
+        tbodyTugas.innerHTML = '';
+        store.tugas
+            .filter(item => item.tanggal.startsWith(selectedMonth))
+            .sort((a,b) => new Date(a.tanggal) - new Date(b.tanggal))
+            .forEach(item => {
+                tbodyTugas.innerHTML += `
+                    <tr>
+                        <td>${formatTanggal(item.tanggal)}</td>
+                        <td>${formatTanggal(item.deadline)}</td>
+                        <td>${escapeHtml(item.kelasMapel)}</td>
+                        <td>${escapeHtml(item.deskripsi)}</td>
+                        <td class="no-print">
+                            <button class="btn-delete" onclick="deleteData('tugas', ${item.id})">Hapus</button>
+                        </td>
+                    </tr>`;
+            });
+    }
+
+    // Format Tanggal ke Indonesia
+    function formatTanggal(dateStr) {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    // Pengaman XSS
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text.replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+</script>
+</body>
+</html>
